@@ -25,15 +25,12 @@ export function useLazyQuery<TData = any, TVariables = OperationVariables>(
   query: DocumentNode | TypedDocumentNode<TData, TVariables>,
   options?: LazyQueryHookOptions<TData, TVariables>
 ): QueryTuple<TData, TVariables> {
-  const [execution, setExecution] = useState<
-    {
-      called: boolean,
-      options?: QueryLazyOptions<TVariables>,
-      resolves: Array<(result: LazyQueryResult<TData, TVariables>) => void>,
-    }
-  >({
+  const [execution, setExecution] = useState<{
+    called: boolean,
+    options?: QueryLazyOptions<TVariables>,
+    resolve?: any,
+  }>({
     called: false,
-    resolves: [],
   });
 
   let result = useQuery<TData, TVariables>(query, {
@@ -60,7 +57,7 @@ export function useLazyQuery<TData = any, TVariables = OperationVariables>(
 
       return {
         called: true,
-        resolves: [...execution.resolves, resolve],
+        resolve,
         options: executeOptions,
       };
     });
@@ -69,12 +66,13 @@ export function useLazyQuery<TData = any, TVariables = OperationVariables>(
   }, []);
 
   useEffect(() => {
-    const { resolves } = execution;
+    const { resolve } = execution;
     if (!result.loading && resolves.length) {
       setExecution((execution) => {
         return { ...execution, resolves: [] };
       });
-      resolves.forEach((resolve) => resolve(result));
+
+      resolve(result);
     }
   }, [result, execution]);
 
