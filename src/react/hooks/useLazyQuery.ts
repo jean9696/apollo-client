@@ -28,7 +28,7 @@ export function useLazyQuery<TData = any, TVariables = OperationVariables>(
   const [execution, setExecution] = useState<{
     called: boolean,
     options?: QueryLazyOptions<TVariables>,
-    resolve?: any,
+    resolve?: (result: LazyQueryResult<TData, TVariables>) => void,
   }>({
     called: false,
   });
@@ -65,11 +65,13 @@ export function useLazyQuery<TData = any, TVariables = OperationVariables>(
     return promise;
   }, []);
 
+  // NOTE(brian): I tried to call refetch() for the first call, but some truly
+  // strange circular object errors started appearing in jest tests.
   useEffect(() => {
     const { resolve } = execution;
-    if (!result.loading && resolves.length) {
+    if (!result.loading && resolve) {
       setExecution((execution) => {
-        return { ...execution, resolves: [] };
+        return { ...execution, resolve: undefined };
       });
 
       resolve(result);
